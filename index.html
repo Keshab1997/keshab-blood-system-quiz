@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইন্টার‍্যাকটিভ বায়োলজি কুইজ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        .dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .dark-mode .container {
+            background: #444;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .dark-mode h1 {
+            color: #fff;
+        }
+        .accordion {
+            margin: 10px 0;
+        }
+        .accordion-header {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .accordion-header:hover {
+            background: #0056b3;
+        }
+        .accordion-content {
+            display: none;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 0 0 5px 5px;
+        }
+        .accordion-content.active {
+            display: block;
+        }
+        .question {
+            margin: 20px 0;
+        }
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+        .option {
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option:hover {
+            background-color: #e0e0e0;
+        }
+        .dark-mode .option:hover {
+            background-color: #555;
+        }
+        .correct {
+            background-color: #28a745 !important;
+            color: white;
+        }
+        .wrong {
+            background-color: #dc3545 !important;
+            color: white;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-style: italic;
+            display: none;
+        }
+        #score {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        #progress, #result-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        #progress-bar {
+            height: 100%;
+            background: #28a745;
+            width: 0;
+            transition: width 0.2s;
+        }
+        #result-bar {
+            display: flex;
+        }
+        #correct-bar {
+            height: 100%;
+            background: #28a745;
+            width: 0;
+            transition: width 0.2s;
+        }
+        #wrong-bar {
+            height: 100%;
+            background: #dc3545;
+            width: 0;
+            transition: width 0.2s;
+        }
+        #pending-bar {
+            height: 100%;
+            background: #ccc;
+            width: 100%;
+            transition: width 0.2s;
+        }
+        #progress-label, #result-label {
+            text-align: center;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        #timer {
+            text-align: center;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        #retry, #toggle-theme {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #retry:hover, #toggle-theme:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ইন্টার‍্যাকটিভ বায়োলজি কুইজ</h1>
+        <div id="timer">Time: 00:00</div>
+        <div id="score">Score: 0 / 68</div>
+        <div id="progress-label">Progress</div>
+        <div id="progress"><div id="progress-bar"></div></div>
+        <div id="result-label">Results: Correct (Green) | Wrong (Red) | Pending (Gray)</div>
+        <div id="result-bar">
+            <div id="correct-bar"></div>
+            <div id="wrong-bar"></div>
+            <div id="pending-bar"></div>
+        </div>
+        <div id="quiz"></div>
+        <button id="retry" style="display: none;">Retry Quiz</button>
+        <button id="toggle-theme">Toggle Dark/Light Mode</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        const questionSets = [
+            {
+                title: "সেট ১: রক্ত সংবহন তন্ত্র (প্রশ্ন ১–১০)",
+                questions: [
+                    {
+                        question: "হৃদপিণ্ডের অবস্থান কোথায়?",
+                        options: ["উদয় গহ্বরে", "মিডিয়াসটিনাম", "বক্ষগহ্বরে", "উভয় ফুসফুসের মাঝে"],
+                        correct: 2,
+                        explanation: "হৃদপিণ্ড বক্ষগহ্বরে (থোরাসিক ক্যাভিটি) অবস্থিত, ফুসফুসের মাঝে এবং মিডিয়াসটিনামে।"
+                    },
+                    {
+                        question: "নিচের কোনটির দুটি কক্ষবিশিষ্ট হৃৎপিণ্ড রয়েছে?",
+                        options: ["মানুষ", "চড়ুই", "বানর", "মাছ"],
+                        correct: 3,
+                        explanation: "মাছের হৃৎপিণ্ড দুটি কক্ষবিশিষ্ট: একটি অলিন্দ এবং একটি নিলয়।"
+                    },
+                    {
+                        question: "একজন প্রাপ্তবয়স্ক মানুষের হৃৎপিণ্ডের গড় ওজন কত?",
+                        options: ["৩০০ গ্রাম", "২৪০ গ্রাম", "২৫৫ গ্রাম", "৩৯০ গ্রাম"],
+                        correct: 0,
+                        explanation: "একজন প্রাপ্তবয়স্ক মানুষের হৃৎপিণ্ডের গড় ওজন প্রায় ৩০০ গ্রাম।"
+                    },
+                    {
+                        question: "কুমিরের হৃদপিণ্ডে কতটি প্রকোষ্ঠ থাকে?",
+                        options: ["৩", "৪", "৫", "২"],
+                        correct: 1,
+                        explanation: "কুমিরের হৃৎপিণ্ডে চারটি প্রকোষ্ঠ থাকে, যদিও অক্সিজেনযুক্ত এবং অক্সিজেনবিহীন রক্ত আংশিক মিশ্রিত হয়।"
+                    },
+                    {
+                        question: "নিচের কোনটি চার ভাগে বিভক্ত?",
+                        options: ["ফুসফুস", "কিডনি", "পেট", "হৃদয়"],
+                        correct: 3,
+                        explanation: "হৃদয় চার ভাগে বিভক্ত: দুটি অলিন্দ এবং দুটি নিলয়।"
+                    },
+                    {
+                        question: "বাম অলিন্দ ও নিলয়ের সংযোগস্থলে কোন কপাটিকা থাকে?",
+                        options: ["পালমোনারি", "বাইকাসপিড", "ট্রাইকাসপিড", "অ্যাওর্টিক"],
+                        correct: 1,
+                        explanation: "বাইকাসপিড (মাইট্রাল) ভাল্ভ বাম অলিন্দ ও নিলয়ের মধ্যে রক্ত প্রবাহ নিয়ন্ত্রণ করে।"
+                    },
+                    {
+                        question: "মানবদেহের নিচের কোন অঙ্গে সাইনোটিয়াল নোড থাকে?",
+                        options: ["মস্তিষ্ক", "কিডনি", "হৃদয়", "যকৃত"],
+                        correct: 2,
+                        explanation: "সাইনোটিয়াল নোড হৃদয়ের ডান অলিন্দে থাকে এবং হৃৎস্পন্দন শুরু করে।"
+                    },
+                    {
+                        question: "একজন সাধারণ মানুষের প্রতি মিনিটে হার্টবিট কত হয়?",
+                        options: ["৫০–১০০", "১০০–১২০", "৬০–৮০", "৯০–১০০"],
+                        correct: 2,
+                        explanation: "একজন সাধারণ মানুষের বিশ্রামকালীন হার্টবিট প্রতি মিনিটে ৬০–৮০ বার।"
+                    },
+                    {
+                        question: "প্রাণীদেহে রক্ত সঞ্চালন আবিষ্কার করেন কে?",
+                        options: ["ডারউইন", "মালপিজি", "হার্ভে", "সেরিংটন"],
+                        correct: 2,
+                        explanation: "উইলিয়াম হার্ভে ১৬২৮ সালে প্রাণীদেহে রক্ত সঞ্চালনের পদ্ধতি আবিষ্কার করেন।"
+                    },
+                    {
+                        question: "যে রক্তনালীগুলো হৃদপিণ্ড থেকে শরীরের বিভিন্ন অংশে রক্ত বহন করে, তাদের কী বলা হয়?",
+                        options: ["ধমনী", "শিরা", "কৌশিক", "টার্ম"],
+                        correct: 0,
+                        explanation: "ধমনী হৃদপিণ্ড থেকে শরীরের বিভিন্ন অংশে রক্ত বহন করে।"
+                    }
+                ]
+            },
+            {
+                title: "সেট ২: রক্ত সংবহন তন্ত্র (প্রশ্ন ১১–২১)",
+                questions: [
+                    {
+                        question: "মানুষের হৃৎপিণ্ড কত চেম্বার বিশিষ্ট?",
+                        options: ["দুই", "তিন", "চার", "পাঁচ"],
+                        correct: 2,
+                        explanation: "মানুষের হৃৎপিণ্ড চারটি চেম্বার বিশিষ্ট: দুটি অলিন্দ (এট্রিয়া) এবং দুটি নিলয় (ভেন্ট্রিকল)।"
+                    },
+                    {
+                        question: "মানুষের হৃৎপিণ্ডে কয়টি প্রকোষ্ঠ থাকে?",
+                        options: ["১টি", "২টি", "৩টি", "৪টি"],
+                        correct: 3,
+                        explanation: "মানুষের হৃৎপিণ্ডে চারটি প্রকোষ্ঠ থাকে: দুটি অলিন্দ এবং দুটি নিলয়।"
+                    },
+                    {
+                        question: "হৃৎপিণ্ডের কোন প্রকোষ্ঠটি অক্সিজেনবিহীন রক্ত গ্রহণ করে?",
+                        options: ["ডান অলিন্দ", "বাম অলিন্দ", "ডান নিলয়", "বাম নিলয়"],
+                        correct: 0,
+                        explanation: "ডান অলিন্দ শরীর থেকে অক্সিজেনবিহীন রক্ত গ্রহণ করে এবং তা ডান নিলয়ে পাঠায়।"
+                    },
+                    {
+                        question: "নিচের কোনটি সংবহনতন্ত্রের অংশ নয়?",
+                        options: ["বৃহৎ অন্ত্র", "হৃৎপিণ্ড", "রক্ত", "ধমনী"],
+                        correct: 0,
+                        explanation: "বৃহৎ অন্ত্র পাচনতন্ত্রের অংশ, সংবহনতন্ত্রের নয়।"
+                    },
+                    {
+                        question: "মানুষের হৃৎপিণ্ডে কতগুলো ভাল্ভ থাকে?",
+                        options: ["২টি", "৩টি", "৪টি", "৫টি"],
+                        correct: 2,
+                        explanation: "হৃৎপিণ্ডে চারটি ভাল্ভ থাকে: ট্রাইকাসপিড, পালমোনারি, মাইট্রাল, এবং অ্যাওর্টিক।"
+                    },
+                    {
+                        question: "হৃৎপিণ্ডের কোন ভাল্ভটি ডান অলিন্দ ও ডান নিলয়ের মধ্যে অবস্থিত?",
+                        options: ["মাইট্রাল ভাল্ভ", "ট্রাইকাসপিড ভাল্ভ", "অ্যাওর্টিক ভাল্ভ", "পালমোনারি ভাল্ভ"],
+                        correct: 1,
+                        explanation: "ট্রাইকাসপিড ভাল্ভ ডান অলিন্দ ও ডান নিলয়ের মধ্যে রক্তের প্রবাহ নিয়ন্ত্রণ করে।"
+                    },
+                    {
+                        question: "মানুষের দেহে রক্ত কোনটি দ্বারা পরিবাহিত হয়?",
+                        options: ["ধমনী", "শিরা", "কৈশিকা", "সবগুলো"],
+                        correct: 3,
+                        explanation: "রক্ত ধমনী, শিরা, এবং কৈশিকা দ্বারা পরিবাহিত হয়।"
+                    },
+                    {
+                        question: "হৃৎপিণ্ডে রক্ত প্রবাহের ক্রম কোনটি?",
+                        options: ["অলিন্দ → নিলয় → ধমনী", "নিলয় → অলিন্দ → শিরা", "ধমনী → অলিন্দ → নিলয়", "শিরা → নিলয় → অলিন্দ"],
+                        correct: 0,
+                        explanation: "রক্ত শিরা থেকে অলিন্দে, তারপর নিলয়ে, এবং অবশেষে ধমনীতে প্রবাহিত হয়।"
+                    },
+                    {
+                        question: "ধমনী ও শিরার মধ্যে সংযোগ স্থাপন করে কোনটি?",
+                        options: ["হৃৎপিণ্ড", "কৈশিকা", "লসিকা", "প্লাজমা"],
+                        correct: 1,
+                        explanation: "কৈশিকা ধমনী ও শিরার মধ্যে সংযোগ স্থাপন করে এবং পুষ্টি ও অক্সিজেন বিনিময় করে।"
+                    },
+                    {
+                        question: "রক্ত নালিকার ভেতরে রক্ত সঞ্চিত হয় না কেন?",
+                        options: ["ক্যালসিয়াম থাকার জন্য", "পটাশিয়াম থাকার জন্য", "হেপারিন থাকার জন্য", "অনুচক্রিকা থাকার জন্য"],
+                        correct: 2,
+                        explanation: "হেপারিন একটি অ্যান্টিকোয়াগুল্যান্ট, যা রক্তনালীর ভেতরে রক্ত জমাট বাঁধা প্রতিরোধ করে।"
+                    },
+                    {
+                        question: "রক্তচাপ মাপার যন্ত্রের নাম কী?",
+                        options: ["হাইড্রোমিটার", "হাইগ্রোমিটার", "ব্যারোমিটার", "স্ফিগমোম্যানোমিটার"],
+                        correct: 3,
+                        explanation: "স্ফিগমোম্যানোমিটার রক্তচাপ মাপার যন্ত্র, যা পারদ বা ডিজিটাল পদ্ধতিতে চাপ মাপে।"
+                    }
+                ]
+            },
+            {
+                title: "সেট ৩: রক্ত সংবহন তন্ত্র (প্রশ্ন ২২–৩২)",
+                questions: [
+                    {
+                        question: "একজন সুস্থ মানুষের স্বাভাবিক রক্তচাপ কত?",
+                        options: ["৯০/৬০", "১২০/৮০", "২০০/১১০", "১৪০/৬০"],
+                        correct: 1,
+                        explanation: "একজন সুস্থ মানুষের স্বাভাবিক রক্তচাপ ১২০/৮০ মিমি এইচজি, যেখানে ১২০ সিস্টোলিক এবং ৮০ ডায়াস্টোলিক চাপ।"
+                    },
+                    {
+                        question: "মানুষের রক্তের স্বাদ কেমন?",
+                        options: ["সামান্য আম্লিক", "সামান্য ক্ষারীয়", "প্রসম", "কোনোটিই নয়"],
+                        correct: 1,
+                        explanation: "মানুষের রক্ত সামান্য ক্ষারীয়, কারণ এর pH মান প্রায় ৭.৩৫–৭.৪৫, যা ক্ষারীয় পরিসরে পড়ে।"
+                    },
+                    {
+                        question: "মানবদেহে মোট রক্তের পরিমাণ কত?",
+                        options: ["৪.৫ লিটার", "৬.৫ লিটার", "৭.৬ লিটার", "৫.৬ লিটার"],
+                        correct: 3,
+                        explanation: "একজন প্রাপ্তবয়স্ক মানুষের দেহে গড়ে ৫–৬ লিটার রক্ত থাকে, তাই ৫.৬ লিটার সবচেয়ে কাছাকাছি উত্তর।"
+                    },
+                    {
+                        question: "রক্ত কোন ধরণের কলা?",
+                        options: ["আবরণী কলা", "পেশি কলা", "স্নায়ু কলা", "একটি বিশেষ সংযোজক কলা"],
+                        correct: 3,
+                        explanation: "রক্ত একটি তরল সংযোজক কলা, যা রক্তকণিকা এবং প্লাজমা নিয়ে গঠিত এবং দেহে পুষ্টি ও অক্সিজেন পরিবহন করে।"
+                    },
+                    {
+                        question: "রক্তের গ্রুপের শ্রেণীবিন্যাস কে করেন?",
+                        options: ["কার্ল কুলার", "কার্ল ল্যান্ডস্টেইনার", "এডুয়ার জেনার", "হিউমান"],
+                        correct: 1,
+                        explanation: "কার্ল ল্যান্ডস্টেইনার ১৯০১ সালে ABO রক্তের গ্রুপ শ্রেণীবিভাগ আবিষ্কার করেন।"
+                    },
+                    {
+                        question: "A, B এবং O রক্তের গ্রুপ পদ্ধতি কে আবিষ্কার করেন?",
+                        options: ["কাল কুলার", "কার্ল ল্যান্ডস্টেইনার", "মরি সিলেমান", "এডুয়ার জেনার"],
+                        correct: 1,
+                        explanation: "কার্ল ল্যান্ডস্টেইনার ABO রক্তের গ্রুপ পদ্ধতি আবিষ্কার করেন, যা রক্ত সঞ্চালনের জন্য গুরুত্বপূর্ণ।"
+                    },
+                    {
+                        question: "নিচের কোনটি রক্তের গ্রুপ নয়?",
+                        options: ["A", "AB", "C", "O"],
+                        correct: 2,
+                        explanation: "ABO রক্তের গ্রুপ পদ্ধতিতে A, B, AB, এবং O গ্রুপ রয়েছে। C কোনো রক্তের গ্রুপ নয়।"
+                    },
+                    {
+                        question: "কার্ল ল্যান্ডস্টেইনার কোন আবিষ্কারের জন্য পরিচিত?",
+                        options: ["ডিএনএ বিচ্ছিন্ন", "রক্তের গ্রুপের শ্রেণীবিভাগ আবিষ্কার", "জিকা ভাইরাস সনাক্ত", "স্নায়ুতন্ত্র অধ্যয়ন"],
+                        correct: 1,
+                        explanation: "কার্ল ল্যান্ডস্টেইনার রক্তের গ্রুপ (ABO) শ্রেণীবিভাগ আবিষ্কারের জন্য পরিচিত।"
+                    },
+                    {
+                        question: "AB রক্তের গ্রুপের একজন ব্যক্তি—",
+                        options: ["A, B এবং O রক্ত দিতে পারেন", "সর্বজনীন রক্তদাতা", "যে কোনো রক্তের গ্রুপ থেকে রক্ত নিতে পারেন", "সার্বজনীন দাতা নন"],
+                        correct: 2,
+                        explanation: "AB গ্রুপের ব্যক্তি সর্বজনীন গ্রাহী, কারণ তারা A, B, AB, এবং O গ্রুপ থেকে রক্ত নিতে পারেন।"
+                    },
+                    {
+                        question: "A গ্রুপের রক্ত কোন গ্রুপকে দেওয়া যায়?",
+                        options: ["A", "B", "AB এবং A", "A ও O"],
+                        correct: 2,
+                        explanation: "A গ্রুপের রক্ত A এবং AB গ্রুপের ব্যক্তিদের দেওয়া যায়, কারণ এদের অ্যান্টিজেন সামঞ্জস্যপূর্ণ।"
+                    },
+                    {
+                        question: "A গ্রুপের ব্যক্তিকে রক্ত দিতে পারবে—",
+                        options: ["A গ্রুপ", "B গ্রুপ", "A এবং AB গ্রুপ", "A এবং O গ্রুপ"],
+                        correct: 3,
+                        explanation: "A গ্রুপের ব্যক্তি A এবং O গ্রুপ থেকে রক্ত নিতে পারে, কারণ O গ্রুপে কোনো অ্যান্টিজেন নেই।"
+                    }
+                ]
+            },
+            {
+                title: "সেট ৪: রক্ত সংবহন তন্ত্র (প্রশ্ন ৩৩–৪৩)",
+                questions: [
+                    {
+                        question: "কোন শ্রেণীর রক্তকে সর্বজনীন গৃহীতা বলা হয়?",
+                        options: ["O", "AB", "A", "B"],
+                        correct: 1,
+                        explanation: "AB রক্তের গ্রুপ সর্বজনীন গৃহীতা, কারণ এটি A, B, AB, এবং O গ্রুপ থেকে রক্ত নিতে পারে।"
+                    },
+                    {
+                        question: "রক্তের কোন গ্রুপকে সর্বজনীন দাতা বলা হয়?",
+                        options: ["O", "AB", "A", "B"],
+                        correct: 0,
+                        explanation: "O গ্রুপ সর্বজনীন দাতা, কারণ এতে কোনো অ্যান্টিজেন নেই, তাই সব গ্রুপের ব্যক্তিরা এটি গ্রহণ করতে পারে।"
+                    },
+                    {
+                        question: "Rh ফ্যাক্টর কোন প্রাণীর রক্তে প্রথম পাওয়া যায়?",
+                        options: ["গরু", "কুকুর", "বানর", "হাতি"],
+                        correct: 2,
+                        explanation: "Rh ফ্যাক্টর প্রথম রেসাস ম্যাকাক বানরের রক্তে পাওয়া যায়, তাই এটি Rh নামে পরিচিত।"
+                    },
+                    {
+                        question: "নিচের কোনটি সর্বজনীন গৃহীত রক্তের গ্রুপ?",
+                        options: ["AB+", "O+", "A+", "B+"],
+                        correct: 0,
+                        explanation: "AB+ সর্বজনীন গৃহীতা, কারণ এটি সব ধরনের রক্ত গ্রহণ করতে পারে।"
+                    },
+                    {
+                        question: "নিচের ব্লাড গ্রুপের মধ্যে কোনটিকে সার্বজনীন দাতা হিসেবে বিবেচনা করা হয়?",
+                        options: ["AB+", "O+", "O−", "AB−"],
+                        correct: 2,
+                        explanation: "O− সার্বজনীন দাতা, কারণ এতে কোনো অ্যান্টিজেন (A, B, বা Rh) নেই।"
+                    },
+                    {
+                        question: "নিচের কোন রক্তের গ্রুপকে ইউনিভার্সাল রিসিভার বলা হয়?",
+                        options: ["AB+", "O+", "A+", "O−"],
+                        correct: 0,
+                        explanation: "AB+ ইউনিভার্সাল রিসিভার, কারণ এটি সব ধরনের রক্ত গ্রহণ করতে পারে।"
+                    },
+                    {
+                        question: "রক্ত নালিকার ভেতরে রক্ত সঞ্চিত হয় না কেন?",
+                        options: ["ক্যালসিয়াম থাকার জন্য", "পটাশিয়াম থাকার জন্য", "হেপারিন থাকার জন্য", "অনুচক্রিকা থাকার জন্য"],
+                        correct: 2,
+                        explanation: "হেপারিন একটি অ্যান্টিকোয়াগুল্যান্ট, যা রক্তনালীর ভেতরে রক্ত জমাট বাঁধা প্রতিরোধ করে।"
+                    },
+                    {
+                        question: "রক্তচাপ মাপার যন্ত্রের নাম কী?",
+                        options: ["হাইড্রোমিটার", "হাইগ্রোমিটার", "ব্যারোমিটার", "স্ফিগমোম্যানোমিটার"],
+                        correct: 3,
+                        explanation: "স্ফিগমোম্যানোমিটার রক্তচাপ মাপার যন্ত্র, যা পারদ বা ডিজিটাল পদ্ধতিতে চাপ মাপে।"
+                    },
+                    {
+                        question: "মানুষের রক্তের শিস্টলিক চাপ কত?",
+                        options: ["১২০", "১১০", "১৩০", "৮০"],
+                        correct: 0,
+                        explanation: "মানুষের স্বাভাবিক সিস্টলিক রক্তচাপ প্রায় ১২০ মিমি এইচজি।"
+                    },
+                    {
+                        question: "একজন সুস্থ মানুষের রক্তচাপ কত?",
+                        options: ["৯০/৬০", "১২০/৮০", "২০০/১১০", "১৪০/৬০"],
+                        correct: 1,
+                        explanation: "একজন সুস্থ মানুষের স্বাভাবিক রক্তচাপ ১২০/৮০ মিমি এইচজি, যেখানে ১২০ সিস্টলিক এবং ৮০ ডায়াস্টোলিক।"
+                    },
+                    {
+                        question: "সাধারণ মানুষের রক্ত কেমন প্রকৃতির হয়?",
+                        options: ["নিরপেক্ষ", "সমান্য অম্লীয়", "এসিডিক বা বেশি পরিবর্তনশীল", "সামান্য ক্ষারীয়"],
+                        correct: 3,
+                        explanation: "মানুষের রক্ত সামান্য ক্ষারীয়, কারণ এর pH মান প্রায় ৭.৩৫–৭.৪৫।"
+                    }
+                ]
+            },
+            {
+                title: "সেট ৫: রক্ত সংবহন তন্ত্র (প্রশ্ন ৪৪–৫৪)",
+                questions: [
+                    {
+                        question: "মানবদেহে রক্তের pH স্তর কত?",
+                        options: ["৬.০–৬.৪", "৬.০–৬.৬", "৭.৩৫–৭.৪৫", "৭.০–৭.২"],
+                        correct: 2,
+                        explanation: "মানবদেহে রক্তের pH স্তর ৭.৩৫–৭.৪৫, যা সামান্য ক্ষারীয় প্রকৃতির।"
+                    },
+                    {
+                        question: "রক্তে পাওয়া পদার্থ, যা অক্সিজেন পরিবহনের জন্য দায়ী—",
+                        options: ["শ্বেত রক্তকণিকা", "প্লেটলেট", "লোহিত রক্তকণিকা", "প্লাজমা"],
+                        correct: 2,
+                        explanation: "লোহিত রক্তকণিকা হিমোগ্লোবিনের মাধ্যমে অক্সিজেন পরিবহন করে।"
+                    },
+                    {
+                        question: "রক্তের কোন উপাদান খাদ্য, কার্বন ডাই-অক্সাইড এবং নাইট্রোজেন বর্জ্য পরিবহন করে?",
+                        options: ["রক্তকণিকা", "রক্তের প্লেটলেট", "লোহিত রক্তকণিকা", "প্লাজমা"],
+                        correct: 3,
+                        explanation: "প্লাজমা রক্তের তরল উপাদান, যা খাদ্য, CO₂, এবং নাইট্রোজেন বর্জ্য পরিবহন করে।"
+                    },
+                    {
+                        question: "মানবদেহে RBC-এর কাজ কী?",
+                        options: ["শরীরের কোষে অক্সিজেন সরবরাহ করা", "শরীরের কোষ থেকে CO₂ নিষ্কাশন করা", "নাইট্রোজেন বর্জ্য অপসারণ করা", "কোষে খাদ্য সরবরাহ করা"],
+                        correct: 0,
+                        explanation: "RBC (লোহিত রক্তকণিকা) হিমোগ্লোবিনের মাধ্যমে শরীরের কোষে অক্সিজেন সরবরাহ করে।"
+                    },
+                    {
+                        question: "মানবদেহে লোহিত রক্তকণিকার সংখ্যা (পুরুষের ক্ষেত্রে)—",
+                        options: ["৫০ হাজার/cu mm", "৫ লাখ/cu mm", "৫০ লাখ/cu mm", "৫ কোটি/cu mm"],
+                        correct: 2,
+                        explanation: "পুরুষের রক্তে লোহিত রক্তকণিকার সংখ্যা গড়ে ৫০ লাখ প্রতি ঘন মিলিমিটার।"
+                    },
+                    {
+                        question: "মানবদেহে নিচের কোন কোষে মাইটোকন্ড্রিয়া পাওয়া যায় না?",
+                        options: ["লোহিত রক্তকণিকা", "যকৃতের কোষ", "পেশি কোষ", "শ্বেত রক্তকণিকা"],
+                        correct: 0,
+                        explanation: "লোহিত রক্তকণিকায় মাইটোকন্ড্রিয়া থাকে না, যা তাদের অক্সিজেন পরিবহনের জন্য সহায়ক।"
+                    },
+                    {
+                        question: "হিমোগ্লোবিনের নিচে কোন ধাতু বিদ্যমান?",
+                        options: ["পয়সা", "তামা", "লোহা", "দস্তা"],
+                        correct: 2,
+                        explanation: "হিমোগ্লোবিনে লোহা (Iron) থাকে, যা অক্সিজেন বাঁধার জন্য দায়ী।"
+                    },
+                    {
+                        question: "হিমোগ্লোবিন কোথায় পাওয়া যায়?",
+                        options: ["অস্থি", "ঘাম", "রক্ত", "পিত তরল"],
+                        correct: 2,
+                        explanation: "হিমোগ্লোবিন রক্তের লোহিত রক্তকণিকায় পাওয়া যায়।"
+                    },
+                    {
+                        question: "হিমোগ্লোবিনে কোন প্রোটিন থাকে?",
+                        options: ["অ্যালবুমিন", "গ্লোবলিন", "গ্লোবিন", "হিম"],
+                        correct: 2,
+                        explanation: "হিমোগ্লোবিনে গ্লোবিন প্রোটিন এবং হিম (লোহাযুক্ত অংশ) থাকে।"
+                    },
+                    {
+                        question: "মানবদেহে হিমোগ্লোবিনের মোট পরিমাণ কত?",
+                        options: ["১৪–২৫ গ্রাম/১০০ মিলি রক্ত", "১৪–১৫ গ্রাম/১০০ মিলি রক্ত", "১৪–২০ গ্রাম/১০০ মিলি রক্ত", "১৪–১৮ গ্রাম/১০০ মিলি রক্ত"],
+                        correct: 1,
+                        explanation: "মানবদেহে হিমোগ্লোবিনের পরিমাণ সাধারণত ১৪–১৫ গ্রাম/১০০ মিলি রক্ত।"
+                    },
+                    {
+                        question: "স্বাভাবিক রক্তে হিমোগ্লোবিনের পরিমাণ (১০০ মিলিমিটার রক্তে) কত শতাংশ?",
+                        options: ["১৬.৬৬%", "১৪–১৫%", "৬৪.৬%", "৬৩.৬%"],
+                        correct: 1,
+                        explanation: "স্বাভাবিক রক্তে হিমোগ্লোবিনের পরিমাণ ১৪–১৫ গ্রাম/১০০ মিলি রক্ত, যা শতাংশ হিসেবে প্রায় ১৪–১৫%।"
+                    }
+                ]
+            },
+            {
+                title: "সেট ৬: রক্ত সংবহন তন্ত্র (প্রশ্ন ৫৫–৬৮)",
+                questions: [
+                    {
+                        question: "হিমোগ্লোবিনে নিচের কোন ধাতু বিদ্যমান?",
+                        options: ["Fe", "Ca", "K", "Al"],
+                        correct: 0,
+                        explanation: "হিমোগ্লোবিনে লোহা (Fe) থাকে, যা অক্সিজেন বাঁধার জন্য দায়ী।"
+                    },
+                    {
+                        question: "রক্তে শ্বেত রক্তকণিকার কাজ কী?",
+                        options: ["হিমোগ্লোবিন প্রোটিন বহন করেন", "পুষ্টি বহন করেন", "সংক্রমণ থেকে শরীরকে রক্ষা করেন", "রক্ত জমাট বাঁধতে সাহায্য করে"],
+                        correct: 2,
+                        explanation: "শ্বেত রক্তকণিকা রোগজীবাণু ধ্বংস করে শরীরকে সংক্রমণ থেকে রক্ষা করে।"
+                    },
+                    {
+                        question: "মানুষের রক্তে সবচেয়ে বড় কণিকা কোনটি?",
+                        options: ["শ্বেত কণিকা", "লসিকা কোষ", "লাল কণিকা", "লোহিত কণিকা"],
+                        correct: 0,
+                        explanation: "শ্বেত রক্তকণিকার মধ্যে মনোসাইট সবচেয়ে বড়, যার আকার ১৮–২৪ μm।"
+                    },
+                    {
+                        question: "মানবদেহে শ্বেত রক্তকণিকার সংখ্যা কত?",
+                        options: ["৩৩ হাজার থেকে ১ লক্ষ/cu mm", "৯ হাজার থেকে ১৫ হাজার/cu mm", "৩০০০ থেকে ২০ হাজার/cu mm", "৩ হাজার থেকে ৩০ হাজার/cu mm"],
+                        correct: 1,
+                        explanation: "মানবদেহে শ্বেত রক্তকণিকার সংখ্যা সাধারণত ৯,০০০ থেকে ১৫,০০০ প্রতি ঘন মিলিমিটার।"
+                    },
+                    {
+                        question: "নিচের কোনটিকে সৈন্যের সাথে তুলনা করা যায়?",
+                        options: ["লোহিত রক্তকণিকা", "প্লাজমা", "শ্বেত রক্তকণিকা", "রক্তের প্লেট"],
+                        correct: 2,
+                        explanation: "শ্বেত রক্তকণিকা শরীরের রোগজীবাণুর বিরুদ্ধে লড়াই করে, তাই এদের সৈন্যের সাথে তুলনা করা হয়।"
+                    },
+                    {
+                        question: "নিচের কোনটি WBC সম্পর্কে সত্য নয়?",
+                        options: ["আকার ১৮–২৪ μm", "আমি বা বৃত্তাকার আকৃতি", "তারা সৈনিক হিসেবে কাজ করে এবং লোকজনকে হত্যা করে", "নিউক্লিয়াসযুক্ত"],
+                        correct: 2,
+                        explanation: "শ্বেত রক্তকণিকা জীবাণু হত্যা করে, লোকজন নয়। বাকি বিকল্পগুলো সঠিক।"
+                    },
+                    {
+                        question: "ক্ষতস্থান থেকে রক্ত বেরোনো বন্ধ করতে সাহায্য করে কোন রক্তকণিকা?",
+                        options: ["লোহিত রক্তকণিকা", "শ্বেত রক্তকণিকা", "অনুচক্রিকা", "প্লাজমা"],
+                        correct: 2,
+                        explanation: "অনুচক্রিকা (প্লেটলেট) রক্ত জমাট বাঁধতে সাহায্য করে।"
+                    },
+                    {
+                        question: "মানবদেহে অনুচক্রিকার সংখ্যা কত?",
+                        options: ["১ লক্ষ থেকে ২ লক্ষ/cu mm", "২.৫ লক্ষ থেকে ৩ লক্ষ/cu mm", "৩ লক্ষ থেকে ৪ লক্ষ/cu mm", "৪ লক্ষ থেকে ৫ লক্ষ/cu mm"],
+                        correct: 1,
+                        explanation: "মানবদেহে অনুচক্রিকার সংখ্যা সাধারণত ২.৫ লক্ষ থেকে ৩ লক্ষ প্রতি ঘন মিলিমিটার।"
+                    },
+                    {
+                        question: "সংবহন তন্ত্র সম্পর্কে নিচের কোনটি সঠিক নয়?",
+                        options: ["সংবহন তন্ত্র মোটের ৭–৮% মানুষের ওজন", "লোহিত রক্তকণিকার জীবনকাল ১১৫–১২০ দিন", "একজন পূর্ণবয়স্ক মানুষের শরীরে রক্তের পরিমাণ ৫.৮ লিটার", "শুধুমাত্র রক্ত সাদা তরল যোজক টিস্যু"],
+                        correct: 3,
+                        explanation: "রক্ত লাল তরল সংযোজক টিস্যু, সাদা নয়।"
+                    },
+                    {
+                        question: "নিচের কোনটি সত্য নয়?",
+                        options: ["লাল রক্ত তরল সংযোজক টিস্যু", "মানুষের RBC-এর জীবনকাল ১১৫–১২০ দিন", "একজন প্রাপ্তবয়স্ক ব্যক্তির প্রায় ৫.৮ লিটার রক্ত থাকে", "এটি শরীরের ওজনের প্রায় ১.৭–১.৮%"],
+                        correct: 3,
+                        explanation: "রক্ত শরীরের ওজনের ৭–৮%, ১.৭–১.৮% নয়।"
+                    },
+                    {
+                        question: "Pulse কীসের দ্বারা পরিমাপ করা হয়?",
+                        options: ["স্নায়ু", "শিরা", "কৌশিক", "ধমনী"],
+                        correct: 3,
+                        explanation: "নাড়ি (Pulse) ধমনীর মাধ্যমে পরিমাপ করা হয়, যেখানে রক্তের চাপ অনুভূত হয়।"
+                    },
+                    {
+                        question: "নিচের কোনটি মানুষের রক্তে পাওয়া যায় না?",
+                        options: ["লিউকোসাইট", "কনডোসাইড", "মনোসাইট", "প্লাজমা"],
+                        correct: 1,
+                        explanation: "কনডোসাইড (কনড্রোসাইট) তরুণাস্থি কোষ, রক্তে পাওয়া যায় না।"
+                    },
+                    {
+                        question: "মানুষের রক্তে সবচেয়ে বড় কণিকা কোনটি?",
+                        options: ["লসিকা কোষ", "লাল রঙের কোষ", "লোহিত কণিকা", "শ্বেত রক্তকণিকা"],
+                        correct: 3,
+                        explanation: "শ্বেত রক্তকণিকা (বিশেষ করে মনোসাইট) রক্তের সবচেয়ে বড় কণিকা।"
+                    },
+                    {
+                        question: "নিচের কোনটি সংবহন তন্ত্রের অংশ নয়?",
+                        options: ["বৃহদান্ত্র", "হৃদয়", "রক্ত", "ধমনী"],
+                        correct: 0,
+                        explanation: "বৃহদান্ত্র পাচনতন্ত্রের অংশ, সংবহন তন্ত্রের নয়।"
+                    }
+                ]
+            }
+        ];
+
+        let score = 0;
+        let wrongAnswers = 0;
+        let answeredQuestions = 0;
+        let timerInterval;
+        let seconds = 0;
+        let banglaVoiceAvailable = false;
+
+        function checkBanglaVoice() {
+            try {
+                const voices = speechSynthesis.getVoices();
+                banglaVoiceAvailable = voices.some(voice => voice.lang.includes('bn'));
+                console.log('Bangla voice available:', banglaVoiceAvailable);
+            } catch (e) {
+                console.log('Speech synthesis not available:', e);
+            }
+        }
+
+        speechSynthesis.onvoiceschanged = checkBanglaVoice;
+        checkBanglaVoice();
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                seconds++;
+                const minutes = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                document.getElementById('timer').textContent = `Time: ${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function speakCorrect() {
+            try {
+                const utterance = new SpeechSynthesisUtterance();
+                utterance.text = banglaVoiceAvailable ? 'সঠিক' : 'Correct';
+                utterance.lang = banglaVoiceAvailable ? 'bn-BD' : 'en-US';
+                utterance.rate = 1;
+                speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.log('Speech synthesis failed:', e);
+            }
+        }
+
+        function speakWrong() {
+            try {
+                const utterance = new SpeechSynthesisUtterance();
+                utterance.text = banglaVoiceAvailable ? 'ভুল' : 'Wrong';
+                utterance.lang = banglaVoiceAvailable ? 'bn-BD' : 'en-US';
+                utterance.rate = 1;
+                speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.log('Speech synthesis failed:', e);
+            }
+        }
+
+        function displayQuestion() {
+            const quizDiv = document.getElementById('quiz');
+            quizDiv.innerHTML = '';
+            questionSets.forEach((set, setIdx) => {
+                const accordionDiv = document.createElement('div');
+                accordionDiv.className = 'accordion';
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'accordion-header';
+                headerDiv.innerHTML = `<span>${set.title}</span><span class="icon">+</span>`;
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'accordion-content';
+                
+                const shuffledQuestions = shuffle([...set.questions]);
+                shuffledQuestions.forEach((q, qIdx) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'question';
+                    const baseIndex = setIdx === 0 ? 1 : setIdx === 1 ? 11 : setIdx === 2 ? 22 : setIdx === 3 ? 33 : setIdx === 4 ? 44 : 55;
+                    questionDiv.innerHTML = `<h3>${baseIndex + qIdx}. ${q.question}</h3>`;
+                    const optionsDiv = document.createElement('div');
+                    optionsDiv.className = 'options';
+                    q.options.forEach((option, i) => {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'option';
+                        optionDiv.textContent = option;
+                        optionDiv.onclick = () => checkAnswer(`${setIdx}-${qIdx}`, i, optionDiv, q, optionsDiv);
+                        optionsDiv.appendChild(optionDiv);
+                    });
+                    const feedbackDiv = document.createElement('div');
+                    feedbackDiv.className = 'feedback';
+                    feedbackDiv.id = `feedback-${setIdx}-${qIdx}`;
+                    feedbackDiv.style.display = 'none';
+                    questionDiv.appendChild(optionsDiv);
+                    questionDiv.appendChild(feedbackDiv);
+                    contentDiv.appendChild(questionDiv);
+                });
+
+                accordionDiv.appendChild(headerDiv);
+                accordionDiv.appendChild(contentDiv);
+                quizDiv.appendChild(accordionDiv);
+
+                headerDiv.onclick = () => {
+                    contentDiv.classList.toggle('active');
+                    headerDiv.querySelector('.icon').textContent = contentDiv.classList.contains('active') ? '−' : '+';
+                };
+            });
+            updateProgress();
+            startTimer();
+        }
+
+        function checkAnswer(questionId, optionIndex, element, q, optionsDiv) {
+            const feedbackDiv = document.getElementById(`feedback-${questionId}`);
+            const options = optionsDiv.children;
+            for (let option of options) {
+                option.style.pointerEvents = 'none';
+            }
+            if (optionIndex === q.correct) {
+                element.classList.add('correct');
+                feedbackDiv.innerHTML = `<b>Correct!</b> Correct Answer: ${q.options[q.correct]}.<br>${q.explanation}`;
+                feedbackDiv.style.color = '#28a745';
+                feedbackDiv.style.display = 'block';
+                score++;
+                speakCorrect();
+            } else {
+                element.classList.add('wrong');
+                feedbackDiv.innerHTML = `<b>Wrong!</b> Correct Answer: ${q.options[q.correct]}.<br>${q.explanation}`;
+                feedbackDiv.style.color = '#dc3545';
+                feedbackDiv.style.display = 'block';
+                wrongAnswers++;
+                speakWrong();
+            }
+            answeredQuestions++;
+            document.getElementById('score').textContent = `Score: ${score} / 68`;
+            updateProgress();
+            if (answeredQuestions === questionSets.reduce((sum, set) => sum + set.questions.length, 0)) {
+                clearInterval(timerInterval);
+                if (score / questionSets.reduce((sum, set) => sum + set.questions.length, 0) >= 0.8) {
+                    try {
+                        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    } catch (e) {
+                        console.log('Confetti error:', e);
+                    }
+                }
+                document.getElementById('retry').style.display = 'block';
+            }
+        }
+
+        function updateProgress() {
+            const totalQuestions = questionSets.reduce((sum, set) => sum + set.questions.length, 0);
+            const progress = (answeredQuestions / totalQuestions) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            
+            const correctPercent = (score / totalQuestions) * 100;
+            const wrongPercent = (wrongAnswers / totalQuestions) * 100;
+            const pendingPercent = ((totalQuestions - answeredQuestions) / totalQuestions) * 100;
+            
+            document.getElementById('correct-bar').style.width = `${correctPercent}%`;
+            document.getElementById('wrong-bar').style.width = `${wrongPercent}%`;
+            document.getElementById('pending-bar').style.width = `${pendingPercent}%`;
+        }
+
+        document.getElementById('retry').onclick = () => {
+            score = 0;
+            wrongAnswers = 0;
+            answeredQuestions = 0;
+            seconds = 0;
+            document.getElementById('score').textContent = `Score: 0 / 68`;
+            document.getElementById('timer').textContent = `Time: 00:00`;
+            document.getElementById('retry').style.display = 'none';
+            document.getElementById('correct-bar').style.width = '0%';
+            document.getElementById('wrong-bar').style.width = '0%';
+            document.getElementById('pending-bar').style.width = '100%';
+            clearInterval(timerInterval);
+            displayQuestion();
+        };
+
+        document.getElementById('toggle-theme').onclick = () => {
+            document.body.classList.toggle('dark-mode');
+            document.getElementById('toggle-theme').textContent = document.body.classList.contains('dark-mode')
+                ? 'Switch to Light Mode'
+                : 'Switch to Dark Mode';
+        };
+
+        // DOM লোড হওয়ার পর কুইজ শুরু
+        document.addEventListener('DOMContentLoaded', displayQuestion);
+    </script>
+</body>
+</html>
